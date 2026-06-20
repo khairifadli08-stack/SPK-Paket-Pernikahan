@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPK Paket Pernikahan - Admin & Pelanggan Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .animate-blob { animation: bounce-slow 10s infinite ease-in-out; }
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-15px) scale(1.02); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-rose-50/30 to-purple-50 text-slate-800 antialiased relative overflow-x-hidden">
+
+    <div class="absolute top-10 left-10 w-96 h-96 bg-rose-200/30 rounded-full filter blur-3xl animate-blob pointer-events-none z-0"></div>
+    <div class="absolute bottom-10 right-10 w-96 h-96 bg-purple-200/20 rounded-full filter blur-3xl animate-blob pointer-events-none z-0"></div>
+
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xl px-4">
+        <div class="w-full max-w-md rounded-3xl bg-white border border-slate-100 p-8 shadow-2xl relative z-10">
+            
+            <div class="text-center">
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-purple-600 text-white shadow-lg">
+                    <i class="fa-solid fa-heart-nodes text-2xl animate-pulse"></i>
+                </div>
+                <h2 id="auth-title" class="mt-4 text-2xl font-black text-slate-900 tracking-tight bg-gradient-to-r from-rose-600 to-purple-700 bg-clip-text text-transparent">Masuk ke Sistem Interaktif WO</h2>
+                <p id="auth-subtitle" class="text-xs text-slate-500 mt-1 font-medium">Silakan masukkan akun kredensial Anda</p>
+            </div>
+            
+            <form id="login-form" class="mt-6 space-y-4">
+                <div>
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Username</label>
+                    <input type="text" id="login-username" placeholder="Masukkan username" required class="w-full rounded-xl border border-slate-200 p-3 text-xs focus:outline-none focus:ring-2 focus:ring-rose-200">
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Password (Sandi)</label>
+                    <input type="password" id="login-password" placeholder="Masukkan password" required class="w-full rounded-xl border border-slate-200 p-3 text-xs focus:outline-none focus:ring-2 focus:ring-rose-200">
+                </div>
+                <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-rose-500 to-purple-600 p-3 text-xs font-bold text-white shadow-md hover:opacity-95 transition-all cursor-pointer">
+                    Masuk ke Workspace <i class="fa-solid fa-right-to-bracket ml-1"></i>
+                </button>
+                <div class="text-center mt-3">
+                    <p class="text-xs text-slate-500">Belum memiliki akun? <button type="button" onclick="toggleAuthMode(true)" class="text-rose-500 font-bold hover:underline">Daftar Akun & Buat Sandi</button></p>
+                </div>
+            </form>
+
+            <form id="register-form" class="mt-6 space-y-4 hidden">
+                <div>
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Pilih Hak Akses (Role)</label>
+                    <select id="reg-role" class="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-bold focus:border-rose-500 focus:bg-white focus:outline-none transition-all">
+                        <option value="admin">ADMIN (Manajemen Operasional & Perhitungan)</option>
+                        <option value="pelanggan">PELANGGAN (Simulasi Pemilihan Paket Kuesioner)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Buat Username Baru</label>
+                    <input type="text" id="reg-username" placeholder="Contoh: fadli_admin / pengantin_baru" required class="w-full rounded-xl border border-slate-200 p-3 text-xs focus:outline-none focus:ring-2 focus:ring-purple-200">
+                </div>
+                <div>
+                    <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Buat Password Anda</label>
+                    <input type="password" id="reg-password" placeholder="Masukkan kata sandi baru" required class="w-full rounded-xl border border-slate-200 p-3 text-xs focus:outline-none focus:ring-2 focus:ring-purple-200">
+                </div>
+                <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-purple-600 to-rose-500 p-3 text-xs font-bold text-white shadow-md hover:opacity-95 transition-all cursor-pointer">
+                    Daftar & Amankan Akun <i class="fa-solid fa-user-plus ml-1"></i>
+                </button>
+                <div class="text-center mt-3">
+                    <p class="text-xs text-slate-500">Sudah punya akun? <button type="button" onclick="toggleAuthMode(false)" class="text-purple-600 font-bold hover:underline">Kembali Login</button></p>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <div id="main-app" class="hidden min-h-screen flex flex-col md:flex-row relative z-10">
+        <aside class="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shadow-xl">
+            <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
+                <div class="h-9 w-9 bg-gradient-to-tr from-rose-500 to-pink-500 rounded-xl flex items-center justify-center text-white text-sm shadow">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-white text-sm tracking-wide">Vows & Veil WO</h1>
+                    <span id="user-role-badge" class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.2 rounded font-black tracking-widest uppercase block mt-0.5">ROLE</span>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 text-xs font-semibold" id="nav-menu"></nav>
+
+            <div class="p-4 border-t border-slate-800 bg-slate-950/50">
+                <div class="text-[11px] text-slate-400 mb-2 flex items-center">
+                    <i class="fa-solid fa-circle text-emerald-500 mr-2 text-[8px] animate-pulse"></i>
+                    <span id="user-logged-name">User</span>
+                </div>
+                <button id="btn-logout" class="w-full flex items-center justify-center space-x-2 p-2.5 rounded-lg bg-slate-800 hover:bg-rose-950 hover:text-rose-400 transition-all text-[11px] font-bold uppercase tracking-wider cursor-pointer">
+                    <i class="fa-solid fa-power-off text-rose-500"></i> <span>Keluar</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-8 overflow-y-auto">
+            
+            <section id="view-dashboard" class="view-section space-y-6">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900 tracking-tight">Selamat Datang Kembali</h2>
+                    <p class="text-xs text-slate-500 font-medium">Berikut adalah rangkuman aktivitas data terkini di dalam sistem.</p>
+                </div>
+
+                <div id="admin-financial-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 hidden">
+                    <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
+                        <div><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Pengeluaran Aset</span>
+                            <h3 class="text-base font-black text-slate-800 mt-0.5" id="dash-total-logistik">Rp 0</h3></div>
+                        <div class="h-9 w-9 bg-red-100 text-red-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-wallet"></i></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
+                        <div><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Estimasi Omzet Paket</span>
+                            <h3 class="text-base font-black text-slate-800 mt-0.5" id="dash-total-omzet">Rp 185,000,000</h3></div>
+                        <div class="h-9 w-9 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-money-bill-trend-up"></i></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between">
+                        <div><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Neraca Bersih Usaha</span>
+                            <h3 class="text-base font-black text-emerald-600 mt-0.5" id="dash-neraca-bersih">Rp 0</h3></div>
+                        <div class="h-9 w-9 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-sm"><i class="fa-solid fa-scale-balanced"></i></div>
+                    </div>
+                    <div class="bg-slate-900 text-white p-4 rounded-xl shadow-sm flex items-center justify-between">
+                        <div><span class="text-[10px] font-bold uppercase text-slate-400">Jumlah Paket Aktif</span>
+                            <h3 class="text-base font-black text-rose-400 mt-0.5" id="dash-count-paket">0</h3></div>
+                        <div class="h-9 w-9 bg-slate-800 rounded-lg flex items-center justify-center text-sm text-rose-500"><i class="fa-solid fa-box"></i></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <h4 class="font-bold text-xs text-slate-800 mb-4 uppercase tracking-wider"><i class="fa-solid fa-chart-bar mr-1 text-rose-500"></i> Prioritas Bobot Variabel Penilaian Pernikahan (AHP)</h4>
+                        <div class="h-64"><canvas id="chartKriteriaGlobal"></canvas></div>
+                    </div>
+                    
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-xs text-slate-800 mb-2 uppercase tracking-wider"><i class="fa-solid fa-shield-halved text-purple-600 mr-1"></i> Ruang Kerja Hak Akses</h4>
+                            <div id="role-instruction-text" class="text-xs text-slate-500 space-y-2 leading-relaxed mt-2">
+                                </div>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/60 text-center mt-4">
+                            <span class="text-[10px] text-slate-400 block font-bold uppercase">Sesi Pengguna Aktif</span>
+                            <span class="text-xs font-bold text-slate-700" id="dash-session-title">-</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-kriteria" class="view-section hidden space-y-4">
+                <div class="border-b pb-3">
+                    <h2 class="text-xl font-bold text-slate-900">Variabel Kriteria Induk</h2>
+                    <p class="text-xs text-slate-500">Kriteria dasar penentu keputusan bobot paket pernikahan.</p>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900 text-white font-bold uppercase tracking-wider">
+                            <tr>
+                                <th class="p-3">Kode</th>
+                                <th class="p-3">Nama Kriteria</th>
+                                <th class="p-3">Skala Kepentingan</th>
+                                <th class="p-3">Keterangan Teknis</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-kriteria-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-subkriteria" class="view-section hidden space-y-4">
+                <div class="border-b pb-3">
+                    <h2 class="text-xl font-bold text-slate-900">Skala Parameter Sub-Kriteria</h2>
+                    <p class="text-xs text-slate-500">Nilai intensitas konversi data riil menjadi angka pembobotan Saaty.</p>
+                </div>
+                <div class="grid grid-cols-1 id="subkriteria-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </section>
+
+            <section id="view-alternatif" class="view-section hidden space-y-4">
+                <div class="flex items-center justify-between border-b pb-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Katalog Paket Pernikahan (Alternatif)</h2>
+                        <p class="text-xs text-slate-500">Entitas paket Wedding Organizer yang dinilai dalam sistem matriks.</p>
+                    </div>
+                    <button id="btn-tambah-paket" onclick="openPaketModal()" class="bg-rose-500 text-white text-[11px] font-bold px-3 py-2 rounded-lg shadow hover:bg-rose-600 transition-all cursor-pointer">
+                        <i class="fa-solid fa-plus mr-1"></i> Tambah Paket
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900 text-white font-bold uppercase">
+                            <tr>
+                                <th class="p-3">Kode</th>
+                                <th class="p-3">Nama Paket Pernikahan</th>
+                                <th class="p-3">Harga Jual</th>
+                                <th class="p-3">Kualitas</th>
+                                <th class="p-3">Kelengkapan</th>
+                                <th class="p-3">Layanan</th>
+                                <th class="p-3 text-center action-paket-header">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-alternatif-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-simulasi-pelanggan" class="view-section hidden space-y-4">
+                <div class="border-b pb-3">
+                    <h2 class="text-xl font-bold text-slate-900">Simulasi Cari Paket Pernikahan Idaman</h2>
+                    <p class="text-xs text-slate-500">Sesuaikan kuesioner preferensi di bawah ini untuk mencari paket terbaik Anda secara instan menggunakan rumus AHP.</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 bg-white p-5 rounded-xl border border-slate-200/60 shadow-sm space-y-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 border-b pb-2"><i class="fa-solid fa-sliders text-rose-500 mr-1"></i> Atur Kebutuhan Anda</h3>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-600 block mb-1">1. Batasan Anggaran Dana (C1)</label>
+                                <select id="sim-c1" class="w-full border p-2 rounded-lg text-xs bg-slate-50 font-medium">
+                                    <option value="Sangat Terjangkau">Maksimal Rp 20 Juta (Sangat Terjangkau)</option>
+                                    <option value="Terjangkau" selected>Rp 21 - Rp 40 Juta (Terjangkau)</option>
+                                    <option value="Cukup Terjangkau">Rp 41 - Rp 60 Juta (Cukup Terjangkau)</option>
+                                    <option value="Mahal">Premium Di atas Rp 60 Juta (Mahal)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-600 block mb-1">2. Kualitas Dekorasi & Busana (C2)</label>
+                                <select id="sim-c2" class="w-full border p-2 rounded-lg text-xs bg-slate-50 font-medium">
+                                    <option value="Sangat Baik">Eksklusif / Sangat Mewah</option>
+                                    <option value="Baik" selected>Bagus / Kain & Bunga Rapi</option>
+                                    <option value="Cukup">Sederhana / Standar</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-600 block mb-1">3. Prioritas Kelengkapan Item Paket (C3)</label>
+                                <select id="sim-c3" class="w-full border p-2 rounded-lg text-xs bg-slate-50 font-medium">
+                                    <option value="Sangat Lengkap" selected>Sangat Lengkap (Katering + Tenda + MUA + Dokumentasi)</option>
+                                    <option value="Lengkap">Lengkap Standar (Tanpa Dokumentasi)</option>
+                                    <option value="Cukup Lengkap">Esensial Saja (Hanya Inti Acara)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-bold text-slate-600 block mb-1">4. Tingkat Layanan Kru Lapangan (C4)</label>
+                                <select id="sim-c4" class="w-full border p-2 rounded-lg text-xs bg-slate-50 font-medium">
+                                    <option value="Sangat Baik">Full Pendampingan WO 24/7</option>
+                                    <option value="Baik" selected>Koordinasi Hari H Saja</option>
+                                    <option value="Cukup">Konsultasi Terbatas</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onclick="prosesSimulasiPelanggan()" class="w-full mt-2 bg-gradient-to-r from-rose-500 to-purple-600 text-white text-xs font-bold p-3 rounded-lg shadow hover:opacity-95 cursor-pointer">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Hitung Rekomendasi Paket Saya
+                        </button>
+                    </div>
+
+                    <div class="lg:col-span-2 space-y-4">
+                        <div class="bg-slate-900 text-white p-4 rounded-xl shadow-md">
+                            <h4 class="text-xs font-bold uppercase text-rose-400 mb-1">Peringkat 1 Hasil Pencocokan Anda:</h4>
+                            <div class="text-xl font-black text-white" id="sim-best-match">Silakan klik tombol hitung di samping</div>
+                        </div>
+                        <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 font-bold text-slate-700">
+                                    <tr>
+                                        <th class="p-3 w-16 text-center">Urutan</th>
+                                        <th class="p-3">Nama Paket WO</th>
+                                        <th class="p-3 text-right">Harga Jual</th>
+                                        <th class="p-3 text-center">Skor Kesesuaian AHP</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-simulasi-body" class="divide-y divide-slate-100">
+                                    <tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada data kalkulasi.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-aksesoris" class="view-section hidden space-y-4">
+                <div class="flex items-center justify-between border-b pb-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Manajemen Pengeluaran Logistik & Alat Pernikahan</h2>
+                        <p class="text-xs text-slate-500">Pencatatan aset operasional modal dekorasi panggung, tenda, gaun, dan alat katering.</p>
+                    </div>
+                    <button id="btn-tambah-aksesoris" onclick="openAksesorisModal()" class="bg-emerald-600 text-white text-[11px] font-bold px-3 py-2 rounded-lg shadow hover:bg-emerald-700 transition-all cursor-pointer">
+                        <i class="fa-solid fa-plus mr-1"></i> Tambah Logistik Alat
+                    </button>
+                </div>
+                <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900 text-white font-bold uppercase">
+                            <tr>
+                                <th class="p-3">Nama Alat / Aksesoris</th>
+                                <th class="p-3">Kategori Inventaris</th>
+                                <th class="p-3 text-center">Kuantitas</th>
+                                <th class="p-3 text-right">Harga Satuan</th>
+                                <th class="p-3 text-right">Total Beban Biaya</th>
+                                <th class="p-3 text-center action-aksesoris-header">Hapus</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-aksesoris-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-admin-perhitungan" class="view-section hidden space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm space-y-3">
+                    <h3 class="text-sm font-bold text-slate-900"><i class="fa-solid fa-code-branch text-purple-600 mr-1"></i> Matriks Perbandingan Berpasangan Saaty (Tetap)</h3>
+                    <div class="overflow-x-auto text-center text-xs">
+                        <table class="w-full border border-slate-200">
+                            <thead class="bg-slate-50 font-bold text-slate-700">
+                                <tr><th class="p-2 border">Kriteria</th><th class="p-2 border">C1 (Harga)</th><th class="p-2 border">C2 (Kualitas)</th><th class="p-2 border">C3 (Lengkap)</th><th class="p-2 border">C4 (Layanan)</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="p-2 border font-bold text-left bg-slate-50">C1</td><td class="p-2 border font-bold text-rose-600 bg-rose-50">1.00</td><td class="p-2 border">3.00</td><td class="p-2 border">2.00</td><td class="p-2 border">3.00</td></tr>
+                                <tr><td class="p-2 border font-bold text-left bg-slate-50">C2</td><td class="p-2 border">0.33</td><td class="p-2 border font-bold text-rose-600 bg-rose-50">1.00</td><td class="p-2 border">2.00</td><td class="p-2 border">2.00</td></tr>
+                                <tr><td class="p-2 border font-bold text-left bg-slate-50">C3</td><td class="p-2 border">0.50</td><td class="p-2 border">0.50</td><td class="p-2 border font-bold text-rose-600 bg-rose-50">1.00</td><td class="p-2 border">1.00</td></tr>
+                                <tr><td class="p-2 border font-bold text-left bg-slate-50">C4</td><td class="p-2 border">0.33</td><td class="p-2 border">0.50</td><td class="p-2 border">1.00</td><td class="p-2 border font-bold text-rose-600 bg-rose-50">1.00</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 text-slate-300 p-5 rounded-xl shadow-md space-y-3">
+                    <h3 class="text-sm font-bold text-white flex items-center"><i class="fa-solid fa-terminal text-rose-400 mr-2"></i> Log Operasional & Keamanan Sistem</h3>
+                    <div class="bg-slate-950 p-3 rounded-lg font-mono text-[11px] space-y-1.5 h-40 overflow-y-auto" id="system-logs-container"></div>
+                </div>
+            </section>
+
+            <section id="view-rekomendasi" class="view-section hidden space-y-4">
+                <div class="flex items-center justify-between border-b pb-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Hasil Pemeringkatan Global Akhir</h2>
+                        <p class="text-xs text-slate-500">Urutan kelayakan alternatif paket berdasarkan kalkulasi bobot baku kuesioner.</p>
+                    </div>
+                    <button onclick="window.print()" class="bg-white border text-slate-700 text-xs font-bold px-3 py-2 rounded-lg shadow-xs hover:bg-slate-50 cursor-pointer">
+                        <i class="fa-solid fa-print mr-1 text-rose-500"></i> Cetak Laporan
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-white font-bold uppercase">
+                                <tr>
+                                    <th class="p-3 w-16 text-center">Rank</th>
+                                    <th class="p-3">Nama Paket Pernikahan</th>
+                                    <th class="p-3 text-center">Vektor Skor Akhir</th>
+                                    <th class="p-3">Status Kelayakan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-ranking-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                    <div class="bg-gradient-to-br from-rose-500 to-purple-600 p-5 rounded-2xl text-white flex flex-col justify-between shadow-lg">
+                        <div class="space-y-2">
+                            <div class="h-10 w-10 bg-white/20 rounded-lg flex items-center justify-center text-amber-300 text-lg"><i class="fa-solid fa-trophy"></i></div>
+                            <h3 class="text-sm font-bold">Rekomendasi Teratas Global</h3>
+                            <p class="text-[11px] text-rose-100 leading-relaxed">Paket dengan perolehan matriks nilai optimal tertinggi berdasarkan data kuesioner gabungan:</p>
+                            <div class="text-base font-black bg-white/10 p-3 rounded-xl text-center border border-white/10" id="best-package-global-title">-</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="paket-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-xs px-4">
+        <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-3">
+            <h3 class="text-sm font-bold text-slate-900"><i class="fa-solid fa-box mr-1 text-rose-500"></i> Form Alternatif Paket</h3>
+            <div class="space-y-2 text-xs">
+                <div><label class="font-bold text-slate-500 block mb-0.5">KODE</label><input type="text" id="p-kode" placeholder="A5" class="w-full border p-2 rounded-lg"></div>
+                <div><label class="font-bold text-slate-500 block mb-0.5">NAMA PAKET</label><input type="text" id="p-nama" placeholder="Paket Custom" class="w-full border p-2 rounded-lg"></div>
+                <div><label class="font-bold text-slate-500 block mb-0.5">HARGA JUAL (RP)</label><input type="number" id="p-harga" placeholder="30000000" class="w-full border p-2 rounded-lg"></div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div><label class="font-bold text-slate-500 block mb-0.5">KUALITAS</label><select id="p-c2" class="w-full border p-1 rounded"><option value="Sangat Baik">Sangat Baik</option><option value="Baik">Baik</option><option value="Cukup">Cukup</option></select></div>
+                    <div><label class="font-bold text-slate-500 block mb-0.5">LENGKAP</label><select id="p-c3" class="w-full border p-1 rounded"><option value="Sangat Lengkap">Sangat Lengkap</option><option value="Lengkap">Lengkap</option><option value="Cukup Lengkap">Cukup Lengkap</option></select></div>
+                    <div><label class="font-bold text-slate-500 block mb-0.5">LAYANAN</label><select id="p-c4" class="w-full border p-1 rounded"><option value="Sangat Baik">Sangat Baik</option><option value="Baik">Baik</option><option value="Cukup">Cukup</option></select></div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2 text-xs font-bold">
+                <button onclick="closePaketModal()" class="px-3 py-1.5 bg-slate-100 rounded-lg text-slate-500">Batal</button>
+                <button onclick="savePaket()" class="px-4 py-1.5 bg-rose-500 text-white rounded-lg">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="aksesoris-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-xs px-4">
+        <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl space-y-3">
+            <h3 class="text-sm font-bold text-slate-900"><i class="fa-solid fa-couch mr-1 text-emerald-500"></i> Log Pengeluaran Logistik</h3>
+            <div class="space-y-2 text-xs">
+                <div><label class="font-bold text-slate-500 block mb-0.5">NAMA BARANG / AKSESORIS</label><input type="text" id="ak-nama" placeholder="Panggung Pelaminan 6 Meter" class="w-full border p-2 rounded-lg"></div>
+                <div>
+                    <label class="font-bold text-slate-500 block mb-0.5">KATEGORI</label>
+                    <select id="ak-kategori" class="w-full border p-2 rounded-lg bg-slate-50">
+                        <option value="Dekorasi & Pelaminan">Dekorasi & Pelaminan</option>
+                        <option value="Tenda & Panggung">Tenda & Panggung</option>
+                        <option value="Tata Busana & Rias">Tata Busana & Rias</option>
+                        <option value="Katering & Alat Saji">Katering & Alat Saji</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="font-bold text-slate-500 block mb-0.5">QTY (JUMLAH)</label><input type="number" id="ak-qty" placeholder="1" class="w-full border p-2 rounded-lg"></div>
+                    <div><label class="font-bold text-slate-500 block mb-0.5">HARGA SATUAN (RP)</label><input type="number" id="ak-satuan" placeholder="250000" class="w-full border p-2 rounded-lg"></div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2 text-xs font-bold">
+                <button onclick="closeAksesorisModal()" class="px-3 py-1.5 bg-slate-100 rounded-lg text-slate-500">Batal</button>
+                <button onclick="saveAksesoris()" class="px-4 py-1.5 bg-emerald-600 text-white rounded-lg">Simpan Log</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRole = 'admin';
+        let currentUserName = '';
+
+        // SEED UTAMA USER DATABASE (Disimpan di LocalStorage jika belum ada)
+        if (!localStorage.getItem('wo_users')) {
+            const defaultUsers = [
+                { username: 'admin', password: 'admin', role: 'admin' },
+                { username: 'pelanggan', password: 'pelanggan', role: 'pelanggan' }
+            ];
+            localStorage.setItem('wo_users', JSON.stringify(defaultUsers));
+        }
+
+        function getUsersFromStorage() {
+            return JSON.parse(localStorage.getItem('wo_users'));
+        }
+
+        function toggleAuthMode(isRegister) {
+            if (isRegister) {
+                document.getElementById('auth-title').innerText = "Daftar Akun Baru";
+                document.getElementById('auth-subtitle').innerText = "Buat username dan sandi pilihan Anda sendiri";
+                document.getElementById('login-form').classList.add('hidden');
+                document.getElementById('register-form').classList.remove('hidden');
+            } else {
+                document.getElementById('auth-title').innerText = "Masuk ke Sistem Interaktif WO";
+                document.getElementById('auth-subtitle').innerText = "Silakan masukkan akun kredensial Anda";
+                document.getElementById('register-form').classList.add('hidden');
+                document.getElementById('login-form').classList.remove('hidden');
+            }
+        }
+
+        // HANDLER REGISTRASI (BUAT SANDI SENDIRI)
+        document.getElementById('register-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const role = document.getElementById('reg-role').value;
+            const username = document.getElementById('reg-username').value.trim().toLowerCase();
+            const password = document.getElementById('reg-password').value;
+
+            let users = getUsersFromStorage();
+
+            // Validasi duplikasi username
+            if (users.some(u => u.username === username)) {
+                alert("Username sudah digunakan! Silakan pilih nama username lain.");
+                return;
+            }
+
+            // Simpan akun baru ke database lokal
+            users.push({ username, password, role });
+            localStorage.setItem('wo_users', JSON.stringify(users));
+
+            alert(`Akun ${role.toUpperCase()} dengan nama "${username}" berhasil didaftarkan! Silakan log in menggunakan kata sandi baru Anda.`);
+            document.getElementById('register-form').reset();
+            toggleAuthMode(false);
+        });
+
+        // HANDLER LOGIN VALIDATION
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value.trim().toLowerCase();
+            const password = document.getElementById('login-password').value;
+
+            const users = getUsersFromStorage();
+            const foundUser = users.find(u => u.username === username && u.password === password);
+
+            if (!foundUser) {
+                alert("Kredensial salah! Username atau Password yang Anda masukkan tidak terdaftar.");
+                return;
+            }
+
+            // Set Sesi Aktif
+            currentRole = foundUser.role;
+            currentUserName = username === 'admin' ? 'Khairi Fadli (Admin WO)' : `${username} (Pelanggan)`;
+
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            
+            buildMenu();
+            initApp();
+            pushSystemLog("Berhasil masuk melalui gerbang otentikasi mandiri.");
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', function() {
+            document.getElementById('login-screen');
+            document.getElementById('login-form').reset();
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+        });
+
+        const kriteriaData = [
+            { kode: 'C1', nama: 'Harga Paket', prioritas: 0.44, kategori: 'Prioritas Utama', ket: 'Fokus efisiensi anggaran dana konsumen' },
+            { kode: 'C2', nama: 'Kualitas Perlengkapan', prioritas: 0.25, kategori: 'Prioritas Tinggi', ket: 'Kondisi fisik kain pelaminan & estafet dekorasi' },
+            { kode: 'C3', nama: 'Kelengkapan Item', prioritas: 0.18, kategori: 'Prioritas Sedang', ket: 'Cakupan katering, dokumentasi & tata rias' },
+            { kode: 'C4', nama: 'Layanan Staff', prioritas: 0.13, kategori: 'Prioritas Dasar', ket: 'Respons cepat tim Wedding Organizer' }
+        ];
+
+        const subKriteriaData = {
+            'C1': ['Sangat Terjangkau (Skala 5)', 'Terjangkau (Skala 4)', 'Cukup Terjangkau (Skala 3)', 'Mahal (Skala 2)'],
+            'C2': ['Sangat Baik (Skala 5)', 'Baik (Skala 4)', 'Cukup (Skala 3)'],
+            'C3': ['Sangat Lengkap (Skala 5)', 'Lengkap (Skala 4)', 'Cukup Lengkap (Skala 3)'],
+            'C4': ['Sangat Baik (Skala 5)', 'Baik (Skala 4)', 'Cukup (Skala 3)']
+        };
+
+        const scoreMapping = {
+            'Sangat Terjangkau': 5, 'Terjangkau': 4, 'Cukup Terjangkau': 3, 'Mahal': 2,
+            'Sangat Baik': 5, 'Baik': 4, 'Cukup': 3,
+            'Sangat Lengkap': 5, 'Lengkap': 4, 'Cukup Lengkap': 3
+        };
+
+        let alternatifData = [
+            { kode: 'A1', nama: 'Paket Intim Sejahtera', harga: 18000000, C1: 'Sangat Terjangkau', C2: 'Cukup', C3: 'Cukup Lengkap', C4: 'Baik' },
+            { kode: 'A2', nama: 'Paket Harmoni Sakinah', harga: 29000000, C1: 'Terjangkau', C2: 'Baik', C3: 'Lengkap', C4: 'Baik' },
+            { kode: 'A3', nama: 'Paket Mulia Medina', harga: 48000000, C1: 'Cukup Terjangkau', C2: 'Sangat Baik', C3: 'Sangat Lengkap', C4: 'Sangat Baik' },
+            { kode: 'A4', nama: 'Paket Royal Nusantara Luxury', harga: 90000000, C1: 'Mahal', C2: 'Sangat Baik', C3: 'Sangat Lengkap', C4: 'Sangat Baik' }
+        ];
+
+        let aksesorisData = [
+            { id: 1, nama: 'Tenda Sarnafil VIP & Kain Serut', kategori: 'Tenda & Panggung', qty: 4, satuan: 1200000 },
+            { id: 2, nama: 'Dekorasi Rustic Panggung Kayu & Flora', kategori: 'Dekorasi & Pelaminan', qty: 1, satuan: 6500000 },
+            { id: 3, nama: 'Set Kursi Tiffany Akrilik', kategori: 'Dekorasi & Pelaminan', qty: 100, satuan: 45000 },
+            { id: 4, nama: 'Baju Adat Beludru Gold Resepsi', kategori: 'Tata Busana & Rias', qty: 2, satuan: 1500000 },
+            { id: 5, nama: 'Pemanas Makanan Chafing Dish Stainless', kategori: 'Katering & Alat Saji', qty: 12, satuan: 400000 }
+        ];
+
+        function pushSystemLog(action) {
+            const container = document.getElementById('system-logs-container');
+            if(!container) return;
+            const time = new Date().toLocaleTimeString();
+            container.innerHTML += `<div class="text-slate-400"><span class="text-rose-400">[${time}]</span> <span class="text-purple-400">${currentRole.toUpperCase()}</span>: ${action}</div>`;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function buildMenu() {
+            const nav = document.getElementById('nav-menu');
+            document.getElementById('user-role-badge').innerText = currentRole;
+            document.getElementById('user-logged-name').innerText = currentUserName;
+            document.getElementById('dash-session-title').innerText = `${currentUserName}`;
+
+            let menu = `
+                <a href="#" data-target="dashboard" class="nav-item flex items-center space-x-2 px-3 py-2.5 rounded-lg bg-rose-500/10 text-rose-400 border-l-4 border-rose-500 transition-all">
+                    <i class="fa-solid fa-gauge w-4"></i> <span>Dashboard</span>
+                </a>
+                <a href="#" data-target="kriteria" class="nav-item flex items-center space-x-2 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-all">
+                    <i class="fa-solid fa-circle-nodes w-4"></i> <span>Data Kriteria</span>
+                </a>
+            `;
+
+            if(currentRole === 'admin') {
+                menu += `
+                    <a href="#" data-target="subkriteria" class="nav-item flex items-center space-x-2 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-all">
+                        <i class="fa-solid fa-layer-group w-4"></i> <span>Skala Sub-Kriteria</span>
+                    </a>
+                    <a href="#" data-target="alternatif" class="nav-item flex items-center space-x-2 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-all">
+                        <i class="fa-solid fa-box w-4"></i> <span>Katalog Paket WO</span>
+                    </a>
+                    <a href="#" data-target="aksesoris" class="nav-item flex items-center space-x-2 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-all">
+                        <i class="fa-solid fa-couch w-4"></i> <span>Beban Logistik</span>
+                    </a>
+                    <a href="#" data-target="admin-perhitungan" class="nav-item flex items-center space-x-2 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-all">
+                        <i class="fa-solid fa-calculator w-4"></i> <span>Matriks & Sistem Log</span>
+                    </a>
+                `;
+            }
+
+            if(currentRole === 'pelanggan') {
+                menu += `
+                    <a href="#" data-target="simulasi-pelanggan" class="nav-item flex items-center space-x-2 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-all">
+                        <i class="fa-solid fa-wand-magic-sparkles w-4"></i> <span>Cari Paket Idaman</span>
+                    </a>
+                `;
+            }
+
+            menu += `
+                <a href="#" data-target="rekomendasi" class="nav-item flex items-center space-x-2 px-3 py-2.5 rounded-lg hover:bg-slate-800 transition-all">
+                    <i class="fa-solid fa-square-poll-vertical w-4"></i> <span>Hasil Peringkat</span>
+                </a>
+            `;
+
+            nav.innerHTML = menu;
+            bindNavEvents();
+
+            // Kontrol Tampilan Aksi / Tombol Tambah Berdasarkan Peran
+            document.getElementById('btn-tambah-paket').style.display = (currentRole === 'admin') ? 'block' : 'none';
+            document.getElementById('btn-tambah-aksesoris').style.display = (currentRole === 'admin') ? 'block' : 'none';
+            document.getElementById('admin-financial-cards').style.display = (currentRole === 'admin') ? 'grid' : 'none';
+        }
+
+        function bindNavEvents() {
+            document.getElementById('nav-menu').addEventListener('click', function(e) {
+                const item = e.target.closest('.nav-item');
+                if(!item) return;
+                e.preventDefault();
+                
+                document.querySelectorAll('.nav-item').forEach(el => {
+                    el.classList.remove('bg-rose-500/10', 'text-rose-400', 'border-l-4', 'border-rose-500');
+                    el.classList.add('hover:bg-slate-800');
+                });
+                
+                item.classList.add('bg-rose-500/10', 'text-rose-400', 'border-l-4', 'border-rose-500');
+                const target = item.getAttribute('data-target');
+                document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+                document.getElementById(`view-${target}`).classList.remove('hidden');
+            });
+        }
+
+        function initApp() {
+            const instr = document.getElementById('role-instruction-text');
+            if(currentRole === 'admin') {
+                instr.innerHTML = `<p><b>Hak Akses: Admin Operasional</b></p><p>• Anda memegang kendali penuh atas manipulasi data alternatif paket pernikahan, input beban logistik aksesoris, dan pemantauan enkripsi perhitungan log.</p>`;
+            } else {
+                instr.innerHTML = `<p><b>Hak Akses: Calon Pengantin (Pelanggan)</b></p><p>• Silakan masuk ke menu <b>Cari Paket Idaman</b> untuk mengisi kuesioner preferensi personal dan menghasilkan kesesuaian rekomendasi AHP instan.</p>`;
+            }
+
+            renderKriteria();
+            renderSubKriteria();
+            renderAlternatif();
+            renderAksesoris();
+            hitungAHPGlobal();
+            initChartGlobal();
+        }
+
+        function renderKriteria() {
+            document.getElementById('table-kriteria-body').innerHTML = kriteriaData.map(k => `
+                <tr class="hover:bg-slate-50 font-medium">
+                    <td class="p-3 font-bold text-slate-900">${k.kode}</td>
+                    <td class="p-3">${k.nama}</td>
+                    <td class="p-3"><span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-[10px] font-bold">${(k.prioritas * 100)}%</span></td>
+                    <td class="p-3 text-slate-500">${k.ket}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderSubKriteria() {
+            document.getElementById('subkriteria-container').innerHTML = Object.keys(subKriteriaData).map(key => {
+                const name = kriteriaData.find(k => k.kode === key).nama;
+                return `
+                    <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-xs">
+                        <h4 class="font-bold text-slate-800 border-b pb-1.5 mb-2"><i class="fa-regular fa-circle-check text-rose-500 mr-1"></i> ${name} (${key})</h4>
+                        <div class="space-y-1 text-slate-600">
+                            ${subKriteriaData[key].map(sub => `<div class="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between"><span>${sub}</span></div>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderAlternatif() {
+            document.getElementById('dash-count-paket').innerText = alternatifData.length;
+            document.getElementById('table-alternatif-body').innerHTML = alternatifData.map(a => `
+                <tr class="hover:bg-slate-50 font-medium text-slate-700">
+                    <td class="p-3 font-bold text-slate-900">${a.kode}</td>
+                    <td class="p-3 font-bold text-slate-800">${a.nama}</td>
+                    <td class="p-3 text-rose-600 font-bold">Rp ${a.harga.toLocaleString('id-ID')}</td>
+                    <td class="p-3"><span class="bg-blue-50 text-blue-700 p-1 rounded">${a.C1}</span></td>
+                    <td class="p-3"><span class="bg-emerald-50 text-emerald-700 p-1 rounded">${a.C2}</span></td>
+                    <td class="p-3"><span class="bg-amber-50 text-amber-700 p-1 rounded">${a.C3}</span></td>
+                    <td class="p-3 text-center action-paket-col">
+                        <button onclick="deletePaket('${a.kode}')" class="text-slate-400 hover:text-red-500 cursor-pointer"><i class="fa-regular fa-trash-can"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.querySelectorAll('.action-paket-col, .action-paket-header').forEach(el => {
+                el.style.display = (currentRole === 'admin') ? 'table-cell' : 'none';
+            });
+        }
+
+        function renderAksesoris() {
+            let totalBeban = 0;
+            document.getElementById('table-aksesoris-body').innerHTML = aksesorisData.map(ak => {
+                const sub = ak.qty * ak.satuan;
+                totalBeban += sub;
+                return `
+                    <tr class="hover:bg-slate-50 text-slate-700 font-medium">
+                        <td class="p-3 font-bold text-slate-900">${ak.nama}</td>
+                        <td class="p-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">${ak.kategori}</span></td>
+                        <td class="p-3 text-center font-bold">${ak.qty}</td>
+                        <td class="p-3 text-right">Rp ${ak.satuan.toLocaleString('id-ID')}</td>
+                        <td class="p-3 text-right font-bold text-emerald-600">Rp ${sub.toLocaleString('id-ID')}</td>
+                        <td class="p-3 text-center action-aksesoris-col">
+                            <button onclick="deleteAksesoris(${ak.id})" class="text-slate-400 hover:text-red-500 cursor-pointer"><i class="fa-regular fa-square-minus text-base"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('dash-total-logistik').innerText = `Rp ${totalBeban.toLocaleString('id-ID')}`;
+            const neraca = 185000000 - totalBeban;
+            document.getElementById('dash-neraca-bersih').innerText = `Rp ${neraca.toLocaleString('id-ID')}`;
+
+            document.querySelectorAll('.action-aksesoris-col, .action-aksesoris-header').forEach(el => {
+                el.style.display = (currentRole === 'admin') ? 'table-cell' : 'none';
+            });
+        }
+
+        function prosesSimulasiPelanggan() {
+            const sc1 = document.getElementById('sim-c1').value;
+            const sc2 = document.getElementById('sim-c2').value;
+            const sc3 = document.getElementById('sim-c3').value;
+            const sc4 = document.getElementById('sim-c4').value;
+
+            const hasilSimulasi = alternatifData.map(alt => {
+                const diff1 = Math.abs(scoreMapping[alt.C1] - scoreMapping[sc1]);
+                const diff2 = Math.abs(scoreMapping[alt.C2] - scoreMapping[sc2]);
+                const diff3 = Math.abs(scoreMapping[alt.C3] - scoreMapping[sc3]);
+                const diff4 = Math.abs(scoreMapping[alt.C4] - scoreMapping[sc4]);
+
+                const skorCocok = (
+                    ((5 - diff1) / 5 * kriteriaData[0].prioritas) +
+                    ((5 - diff2) / 5 * kriteriaData[1].prioritas) +
+                    ((5 - diff3) / 5 * kriteriaData[2].prioritas) +
+                    ((5 - diff4) / 5 * kriteriaData[3].prioritas)
+                ).toFixed(3);
+
+                return { ...alt, skorSimulasi: skorCocok };
+            }).sort((a, b) => b.skorSimulasi - a.skorSimulasi);
+
+            document.getElementById('table-simulasi-body').innerHTML = hasilSimulasi.map((h, i) => `
+                <tr class="${i === 0 ? 'bg-rose-50' : ''} text-slate-700 font-medium">
+                    <td class="p-3 text-center font-bold">${i + 1}</td>
+                    <td class="p-3 font-bold text-slate-900">${h.nama}</td>
+                    <td class="p-3 text-right">Rp ${h.harga.toLocaleString('id-ID')}</td>
+                    <td class="p-3 text-center"><span class="bg-rose-600 text-white px-2 py-0.5 rounded font-bold">${h.skorSimulasi}</span></td>
+                </tr>
+            `).join('');
+
+            document.getElementById('sim-best-match').innerText = `${hasilSimulasi[0].nama} (${hasilSimulasi[0].skorSimulasi})`;
+            pushSystemLog("Pelanggan menjalankan simulasi kalkulator AHP Kuesioner.");
+        }
+
+        function hitungAHPGlobal() {
+            const ranked = alternatifData.map(alt => {
+                const v1 = (scoreMapping[alt.C1] / 5) * kriteriaData[0].prioritas;
+                const v2 = (scoreMapping[alt.C2] / 5) * kriteriaData[1].prioritas;
+                const v3 = (scoreMapping[alt.C3] / 5) * kriteriaData[2].prioritas;
+                const v4 = (scoreMapping[alt.C4] / 5) * kriteriaData[3].prioritas;
+                return { ...alt, skorGlobal: (v1 + v2 + v3 + v4).toFixed(3) };
+            }).sort((a, b) => b.skorGlobal - a.skorGlobal);
+
+            document.getElementById('table-ranking-body').innerHTML = ranked.map((r, i) => `
+                <tr class="${i === 0 ? 'bg-rose-50' : ''} text-slate-700 font-medium">
+                    <td class="p-3 text-center font-bold">${i + 1}</td>
+                    <td class="p-3 font-bold text-slate-900">${r.nama}</td>
+                    <td class="p-3 text-center font-black text-rose-600">${r.skorGlobal}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded ${i < 2 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
+                            ${i < 2 ? 'Rekomendasi Utama' : 'Alternatif'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+
+            if(ranked.length > 0) {
+                document.getElementById('best-package-global-title').innerText = ranked[0].nama;
+            }
+        }
+
+        function openPaketModal() { document.getElementById('paket-modal').style.display = 'flex'; }
+        function closePaketModal() { document.getElementById('paket-modal').style.display = 'none'; }
+        function savePaket() {
+            const kode = document.getElementById('p-kode').value;
+            const nama = document.getElementById('p-nama').value;
+            const harga = parseInt(document.getElementById('p-harga').value) || 0;
+            const C2 = document.getElementById('p-c2').value;
+            const C3 = document.getElementById('p-c3').value;
+            const C4 = document.getElementById('p-c4').value;
+
+            if(kode && nama && harga) {
+                alternatifData.push({ kode, nama, harga, C1: 'Terjangkau', C2, C3, C4 });
+                renderAlternatif();
+                hitungAHPGlobal();
+                closePaketModal();
+                pushSystemLog(`Menambahkan paket kuesioner baru: ${nama}`);
+            }
+        }
+        function deletePaket(kode) {
+            alternatifData = alternatifData.filter(a => a.kode !== kode);
+            renderAlternatif();
+            hitungAHPGlobal();
+            pushSystemLog(`Menghapus data alternatif paket kode: ${kode}`);
+        }
+
+        function openAksesorisModal() { document.getElementById('aksesoris-modal').style.display = 'flex'; }
+        function closeAksesorisModal() { document.getElementById('aksesoris-modal').style.display = 'none'; }
+        function saveAksesoris() {
+            const nama = document.getElementById('ak-nama').value;
+            const kategori = document.getElementById('ak-kategori').value;
+            const qty = parseInt(document.getElementById('ak-qty').value) || 0;
+            const satuan = parseInt(document.getElementById('ak-satuan').value) || 0;
+
+            if(nama && qty && satuan) {
+                aksesorisData.push({ id: Date.now(), nama, kategori, qty, satuan });
+                renderAksesoris();
+                closeAksesorisModal();
+                pushSystemLog(`Menbah pengeluaran logistik: ${nama} (${qty} unit)`);
+            }
+        }
+        function deleteAksesoris(id) {
+            aksesorisData = aksesorisData.filter(ak => ak.id !== id);
+            renderAksesoris();
+            pushSystemLog(`Menghapus log logistik ID berkas: ${id}`);
+        }
+
+        let chartG = null;
+        function initChartGlobal() {
+            const ctx = document.getElementById('chartKriteriaGlobal').getContext('2d');
+            if(chartG) chartG.destroy();
+            chartG = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: kriteriaData.map(k => k.nama),
+                    datasets: [{
+                        data: kriteriaData.map(k => k.prioritas),
+                        backgroundColor: ['#f43f5e', '#8b5cf6', '#f59e0b', '#3b82f6'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
